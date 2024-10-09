@@ -2,6 +2,8 @@ package entities;
 
 import jakarta.persistence.*;
 
+import java.util.Set;
+
 @Entity
 @Table(name = "formation")
 public class Formation {
@@ -13,4 +15,7 @@ public class Formation {
 
     @Column(name = "intituleForm")
     private String intitule;
+
+    @OneToMany(mappedBy = "formation")
+    private Set<Etudiant> etudiants;
 }
