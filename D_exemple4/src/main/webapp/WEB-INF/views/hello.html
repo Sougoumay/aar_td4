@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello</title>
+</head>
+<body>
+Visiblement, le projet se lance...
+
+<h2>Les employés de l'entreprise :</h2>
+<ul>
+    <li th:each="emp : ${employes}" th:text="${emp.prenom}+' '+${emp.nom}">employe...</li>
+</ul>
+
+
+
+
+<h2>
+    <span th:text="'Les acolytes de '+${personnage.prenom}+' '+${personnage.nom}">...</span>
+</h2>
+
+
+
+<ul>
+    <li th:each="emp : ${acolytes}" th:text="${emp.prenom}+' '+${emp.nom}">accolytes...</li>
+</ul>
+
+
+<h2>Les employés sans projet (requête native)</h2>
+<ul>
+    <li th:each="emp : ${sansProjetNatif}" th:text="${emp.prenom}+' '+${emp.nom}">employe...</li>
+</ul>
+
+
+<h2>Les employés sans projet (requête JPQL avec DTO)</h2>
+<ul>
+    <li th:each="emp : ${sansProjetDto}" th:text="${emp.prenom}+' '+${emp.nom}">employe...</li>
+</ul>
+
+<h2>
+    <span th:text="'Le pays où habite le propriétaire de '+${mac.adresseMac}+' ('+${mac.modele}+')'">...</span>
+</h2>
+<span th:text="${paysdemac.nomPays}">...</span>
+
+
+
+<h2>Les téléphones non affectées</h2>
+<ul>
+    <li th:each="tel : ${nonAffectes}" th:text="${tel.idTel}+' : '+${tel.numero}+' ('+${tel.modele}+')'">machine...</li>
+</ul>
+
+
+<h2>
+    <span th:text="'Le nom du projet de code '+${codeProjet}">...</span>
+</h2>
+<span th:text="${projetACode}">...</span>
+
+
+</body>
+</html>

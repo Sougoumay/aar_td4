@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello</title>
+</head>
+<body>
+Visiblement, le projet se lance...
+
+<h2>Les composites:</h2>
+<ul>
+<th:block th:each="comp : ${listecomposites}">
+    <li>
+        <form th:action="@{/deletecomposite}" th:method="post">
+            <input type="hidden" name="idComposite" th:value="${comp.idComposite}">
+        <span th:text="${comp.idComposite}+' '+${comp.nomComposite}">
+        </span>
+        <button type="submit">supprimer</button>
+    </form>
+        <span> Composé de :
+            <ul>
+                <li th:each="elem : ${comp.composants}" th:text="${elem.idComposant}+' '+${elem.nomComposant}">composant</li>
+            </ul>
+        </span>
+    </li>
+</th:block>
+</ul>
+
+<h2>Les composants:</h2>
+
+
+<ul>
+    <th:block th:each="comp : ${listecomposants}">
+        <li>
+            <form th:action="@{/dereferencecomposant}" th:method="post">
+                <input type="hidden" name="idComposant" th:value="${comp.idComposant}">
+                <span th:text="${comp.idComposant}+' '+${comp.nomComposant}">
+        </span>
+                <button type="submit">déréférencer</button>
+            </form>
+        </li>
+    </th:block>
+</ul>
+
+<h2>Créer un composant</h2>
+<form th:action="@{/ajoutcomposant}" th:method="post">
+    nom : <input type="text" name="nomComposant">
+    composite :
+        <select name="idComposite">
+            <option th:each="comp : ${listecomposites}" th:value="${comp.idComposite}" th:text="${comp.nomComposite}"></option>
+        </select>
+    <button type="submit">Ajouter</button>
+</form>
+
+</body>
+</html>
