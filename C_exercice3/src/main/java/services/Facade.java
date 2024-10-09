@@ -1,15 +1,15 @@
 package services;
 
-import entities.Categorie;
-import entities.Gestionnaire;
-import entities.Produit;
-import entities.Vente;
+import entities.*;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class Facade {
@@ -22,7 +22,9 @@ public class Facade {
      * @return
      */
     public Produit findById(int idProduit) {
-        return null;
+        Produit produit = em.find(Produit.class, idProduit);
+        Produit produit1 = (Produit) em.createQuery("SELECT p From Produit p where p.id=:idProduit");
+        return produit1;
     }
 
     /**
@@ -30,7 +32,10 @@ public class Facade {
      * @return
      */
     public String  nomProduitPlusGrosseLigne(){
-        return null;
+        String productName = em.createQuery("Select l.produit.nomProduit from LigneVente l where l.quantite=max(l.quantite)").toString();
+        String productName1 = em.createQuery("Select l.produit.nomProduit from LigneVente l order by l.quantite DESC").setMaxResults(1).getSingleResult().toString();
+        //String productName2 = em.createQuery("Select l.produit.nomProduit from LigneVente l where l.quantite= (select max(l1.quantite) from LigneVente l1)").toString();
+        return productName;
     }
 
     /**
@@ -40,8 +45,31 @@ public class Facade {
      * @return
      */
     public Produit plusGrosseVenteQuantite() {
-        return null;
+
+        // On recupère tous les ventes depuis la table ligneVente
+        List<LigneVente> ligneVentes = em.createQuery("From LigneVente").getResultList();
+
+        // On associe chaque produit à la somme de sa quantité vendu
+        Map<Produit, Integer> productByQuantity = new HashMap<>();
+        for (LigneVente ligneVente : ligneVentes) {
+            Produit produit = ligneVente.getProduit();
+            int quantity = ligneVente.getQuantite();
+            productByQuantity.put(produit, productByQuantity.getOrDefault(produit, 0) + quantity);
+        }
+
+        // On recupère le produit ayant la plus grande quantité de vente en somme
+        Produit produit1 = null;
+        int maxQuantity = 0;
+        for (Map.Entry<Produit, Integer> entry : productByQuantity.entrySet()) {
+           if (entry.getValue() > maxQuantity) {
+               maxQuantity = entry.getValue();
+               produit1 = entry.getKey();
+           }
+        }
+
+        return produit1;
     }
+
 
     /**
      * Renvoie le produit dont les ventes génèrent le plus gros chiffre d'affaire (quantité * prix unitaire)
@@ -50,7 +78,29 @@ public class Facade {
      * @return
      */
     public Produit plusGrosseVenteMontant() {
-        return null;
+        // On recupère tous les ventes depuis la table ligneVente
+        List<LigneVente> ligneVentes = em.createQuery("From LigneVente").getResultList();
+
+        // On associe chaque produit à la somme de sa quantité vendu pour pouvoir calculer le chiffre d'affaire generé par produit
+        Map<Produit, Integer> productByQuantity = new HashMap<>();
+        for (LigneVente ligneVente : ligneVentes) {
+            Produit produit = ligneVente.getProduit();
+            int quantity = ligneVente.getQuantite();
+            productByQuantity.put(produit, productByQuantity.getOrDefault(produit, 0) + quantity);
+        }
+
+        // On recupère le produit ayant generé le prix d'affaire le plus elevé
+        Produit produit1 = null;
+        float maxChiffreAffaire = 0.0f;
+        for(Map.Entry<Produit, Integer> entry : productByQuantity.entrySet()) {
+            Produit produit = entry.getKey();
+            int quantity = entry.getValue();
+            if (quantity*produit.getPrixVente() > maxChiffreAffaire) {
+                produit1 = produit;
+            }
+        }
+
+        return produit1;
     }
 
     /**
@@ -59,7 +109,8 @@ public class Facade {
      * @return
      */
     public List<Produit> stockSous(int stockMini) {
-        return null;
+        List<Produit> produits = em.createQuery("Select p From Produit p where p.stock<:stockMini").getResultList();
+        return produits;
     }
 
     /**
@@ -68,7 +119,10 @@ public class Facade {
      * @return
      */
     public List<Vente> ventesDe(int idProduit) {
-        return null;
+        List<Vente> ventes1 = em.createQuery("Select v from Vente v JOIN LigneVente lv JOIN Produit p where p.idProduit=:idProduit").getResultList();
+        List<Vente> ventes2 = em.createQuery("Select v from Vente v JOIN LigneVente lv where lv.produit.idProduit=:idProduit").getResultList();
+        List<Vente> ventes3 = em.createQuery("select lv.vente from LigneVente lv where lv.produit.idProduit=:idProduit").getResultList();
+        return ventes3;
     }
 
       /**
@@ -77,15 +131,17 @@ public class Facade {
      * @return
      */
     public List<LocalDate> datesVentesDe(int idProduit) {
-        return null;
+        List<LocalDate> dates = em.createQuery("select lv.vente.dateCmd from LigneVente lv where lv.produit.idProduit=:idProduit").getResultList();
+        return dates;
     }
 
     /**
-     * Renvoie la liste de sproduits qui n'ont jamais été vendus (aucune vente)
+     * Renvoie la liste des produits qui n'ont jamais été vendus (aucune vente)
      * @return
      */
     public List<Produit> produitsNonVendus() {
-        return null;
+        List<Produit> produitsNonVendus = em.createQuery("Select p From Produit p where p not in (select distinct lv.produit from LigneVente lv)").getResultList();
+        return produitsNonVendus;
     }
 
     /**
@@ -94,7 +150,8 @@ public class Facade {
      * @return
      */
     public List<Gestionnaire> acheteurDe(int idProduit){
-        return null;
+        List<Gestionnaire> gestionnaires = em.createQuery("select lA.approvisionnement.gestionnaire from LigneApprovisionnement lA where lA.produit.idProduit=:idProduit").getResultList();
+        return gestionnaires;
     }
 
     /**
@@ -103,7 +160,17 @@ public class Facade {
      * @return
      */
     public Produit moinsCherDe(int idCategorie) {
-        return null;
+        // Les deux premières requêtes utilisent trient les produits dans l'ordre ascendant des prix et prend la première, donc celle ayant le prix min
+        Produit produit = em.createQuery("select p from Produit p where p.categorie.idCategorie=:idCategorie order by p.prixVente ASC", Produit.class)
+                .setParameter("idCategorie", idCategorie)
+                .setMaxResults(1) // Limite le résultat à un seul produit
+                .getSingleResult();
+        Produit produit2 = em.createQuery("select p from Produit p where p.categorie.idCategorie=:idCategorie order by p.prixVente ASC", Produit.class)
+                .getSingleResult();
+
+        // Cette requête fais une double requête en faisant un select sur le **min de prix de vente**
+        Produit produit1 = (Produit) em.createQuery("select p from Produit p where p.categorie.idCategorie=:idCategorie and p.prixVente=(select min(p1.prixVente) from Produit p1 where p1.categorie.id=:idCategorie)");
+        return produit;
     }
 
     /**
@@ -112,6 +179,7 @@ public class Facade {
      * @return
      */
     public Categorie categorieDe(int idProduit) {
-        return null;
+        Categorie categorie = (Categorie) em.createQuery("select p.categorie from Produit p where p.idProduit:=idProduit");
+        return categorie;
     }
 }
