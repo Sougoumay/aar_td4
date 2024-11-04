@@ -46,28 +46,10 @@ public class Facade {
      */
     public Produit plusGrosseVenteQuantite() {
 
-        // On recupère tous les ventes depuis la table ligneVente
-        List<LigneVente> ligneVentes = em.createQuery("From LigneVente").getResultList();
-
-        // On associe chaque produit à la somme de sa quantité vendu
-        Map<Produit, Integer> productByQuantity = new HashMap<>();
-        for (LigneVente ligneVente : ligneVentes) {
-            Produit produit = ligneVente.getProduit();
-            int quantity = ligneVente.getQuantite();
-            productByQuantity.put(produit, productByQuantity.getOrDefault(produit, 0) + quantity);
-        }
-
-        // On recupère le produit ayant la plus grande quantité de vente en somme
-        Produit produit1 = null;
-        int maxQuantity = 0;
-        for (Map.Entry<Produit, Integer> entry : productByQuantity.entrySet()) {
-           if (entry.getValue() > maxQuantity) {
-               maxQuantity = entry.getValue();
-               produit1 = entry.getKey();
-           }
-        }
-
-        return produit1;
+        em.createNativeQuery("CREATE OR REPLACE VIEW v1 AS (SELECT produit_idProduit idProduit ,SUM(quantite) as quantite) FROM LigneVente GROUP BY produit_idProduit")
+                .executeUpdate();
+        int idProduit = (Integer) em.createNativeQuery("select idProduit from v1 where quantite=(select max(quantite) from v1)").getSingleResult();
+        return em.find(Produit.class,idProduit);
     }
 
 
@@ -78,29 +60,12 @@ public class Facade {
      * @return
      */
     public Produit plusGrosseVenteMontant() {
-        // On recupère tous les ventes depuis la table ligneVente
-        List<LigneVente> ligneVentes = em.createQuery("From LigneVente").getResultList();
 
-        // On associe chaque produit à la somme de sa quantité vendu pour pouvoir calculer le chiffre d'affaire generé par produit
-        Map<Produit, Integer> productByQuantity = new HashMap<>();
-        for (LigneVente ligneVente : ligneVentes) {
-            Produit produit = ligneVente.getProduit();
-            int quantity = ligneVente.getQuantite();
-            productByQuantity.put(produit, productByQuantity.getOrDefault(produit, 0) + quantity);
-        }
+        em.createNativeQuery("create or replace view v2 as (select produit_idProduit as idProduit, sum(produit.prixVente*quantite) as chiffreAffaire from LigneVente group by idProduit)").executeUpdate();
 
-        // On recupère le produit ayant generé le prix d'affaire le plus elevé
-        Produit produit1 = null;
-        float maxChiffreAffaire = 0.0f;
-        for(Map.Entry<Produit, Integer> entry : productByQuantity.entrySet()) {
-            Produit produit = entry.getKey();
-            int quantity = entry.getValue();
-            if (quantity*produit.getPrixVente() > maxChiffreAffaire) {
-                produit1 = produit;
-            }
-        }
+        int idProduit = (Integer) em.createNativeQuery("select idProduit from v2 where chiffreAffare=(select max(chiffreAffaire) from v2)").getSingleResult();
 
-        return produit1;
+        return em.find(Produit.class, idProduit);
     }
 
     /**
@@ -109,8 +74,7 @@ public class Facade {
      * @return
      */
     public List<Produit> stockSous(int stockMini) {
-        List<Produit> produits = em.createQuery("Select p From Produit p where p.stock<:stockMini").getResultList();
-        return produits;
+        return em.createQuery("Select p From Produit p where p.stock<:stockMini").getResultList();
     }
 
     /**
